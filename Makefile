@@ -15,7 +15,7 @@ endif
 
 # COMMON CONFIGURATION #
 
-NAME := CIAngel
+NAME := TIKdevil
 
 BUILD_DIR := build
 OUTPUT_DIR := output
@@ -35,10 +35,10 @@ RUN_FLAGS :=
 # 3DS CONFIGURATION #
 
 TITLE := $(NAME)
-DESCRIPTION := CIA Downloader using Nintendo CDN
-AUTHOR := _____
-PRODUCT_CODE := CTR-H-ANGEL
-UNIQUE_ID := 0xA617
+DESCRIPTION := Ticket Generator using encTitleKeys.bin
+AUTHOR := Kyraminol
+PRODUCT_CODE := CTR-K-DEVIL
+UNIQUE_ID := 0xD404
 
 SYSTEM_MODE := 64MB
 SYSTEM_MODE_EXT := Legacy

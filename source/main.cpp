@@ -21,12 +21,10 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-#include <hbkb.h>
 
 #include <3ds.h>
 
 #include "utils.h"
-#include "cia.h"
 #include "data.h"
 #include "menu.h"
 
@@ -63,51 +61,6 @@ bool compareByLD(const display_item &a, const display_item &b)
 bool FileExists (std::string name){
     struct stat buffer;
     return (stat (name.c_str(), &buffer) == 0);
-}
-
-Result ConvertToCIA(std::string dir, std::string titleId)
-{
-    char cwd[1024];
-    if (getcwdir(cwd, sizeof(cwd)) == NULL){
-        printf("[!] Could not store Current Working Directory\n");
-        return -1;
-    }
-    chdir(dir.c_str());
-    FILE *tik = fopen("cetk", "rb");
-    if (!tik) return -1;
-    TIK_CONTEXT tik_context = process_tik(tik);
-
-    FILE *tmd = fopen((dir + "/tmd").c_str(),"rb");
-    if (!tmd) return -1;
-    TMD_CONTEXT tmd_context = process_tmd(tmd);
-
-    if(tik_context.result != 0 || tmd_context.result != 0){
-        printf("[!] Input files could not be processed successfully\n");
-        free(tmd_context.content_struct);
-        fclose(tik);
-        fclose(tmd);
-        return -1;
-    }
-
-    chdir(cwd);
-
-    int result;
-    if (bInstallMode)
-    {
-        result = install_cia(tmd_context, tik_context);
-    }
-    else
-    {
-        FILE *output = fopen((dir + "/" + titleId + ".cia").c_str(),"wb");
-        if (!output) return -2;
-
-        result = generate_cia(tmd_context, tik_context, output);
-        if(result != 0){
-            remove((dir + "/" + titleId + ".cia").c_str());
-        }
-    }
-
-    return result;
 }
 
 std::string u32_to_hex_string(u32 i)
@@ -180,99 +133,7 @@ void CreateTicket(std::string titleId, std::string encTitleKey, char* titleVersi
     ofs.close();
 }
 
-Result DownloadTitle(std::string titleId, std::string encTitleKey, std::string outputDir)
-{
-    printf("Starting %s - %s\n", (bInstallMode ? "install" : "download"), titleId.c_str());
 
-    mkpath((outputDir + "/tmp/").c_str(), 0777);
-
-    // Make sure the CIA doesn't already exist
-    if (!bInstallMode && FileExists(outputDir + "/" + titleId + ".cia"))
-    {
-        printf("%s/%s.cia already exists.\n", outputDir.c_str(), titleId.c_str());
-        return 0;
-    }
-
-    std::ofstream ofs;
-
-    FILE *oh = fopen((outputDir + "/tmp/tmd").c_str(), "wb");
-    if (!oh) return -1;
-    Result res = DownloadFile((NUS_URL + titleId + "/tmd").c_str(), oh, false);
-    fclose(oh);
-    if (res != 0)
-    {
-        printf("Could not download TMD. Internet/Title ID is OK?\n");
-        return res;
-    }
-
-    //read version
-    std::ifstream tmdfs;
-    tmdfs.open(outputDir + "/tmp/tmd", std::ofstream::out | std::ofstream::in | std::ofstream::binary);
-    char titleVersion[2];
-    tmdfs.seekg(top+0x9C, std::ios::beg);
-    tmdfs.read(titleVersion, 0x2);
-    tmdfs.close();
-
-    CreateTicket(titleId, encTitleKey, titleVersion, outputDir + "/tmp/cetk");
-
-    printf("Now %s the CIA...\n", (bInstallMode ? "installing" : "creating"));
-
-    res = ConvertToCIA(outputDir + "/tmp", titleId);
-    if (res != 0)
-    {
-        printf("Could not %s the CIA.\n", (bInstallMode ? "install" : "create"));
-        return res;
-    }
-
-    if (!bInstallMode)
-    {
-        rename((outputDir + "/tmp/" + titleId + ".cia").c_str(), (outputDir + "/" + titleId + ".cia").c_str());
-    }
-
-    printf(" DONE!\n");
-    printf("Enjoy the game :)\n");
-
-    // TODO remove tmp dir
-
-    return res;
-}
-
-std::string getInput(HB_Keyboard* sHBKB, bool &bCancelled)
-{
-    sHBKB->HBKB_Clean();
-    touchPosition touch;
-    u8 KBState = 4;
-    std::string input;
-    while (KBState != 1 || input.length() == 0)
-    {
-        hidScanInput();
-        hidTouchRead(&touch);
-        KBState = sHBKB->HBKB_CallKeyboard(touch);
-        input = sHBKB->HBKB_CheckKeyboardInput();
-
-        // If the user cancelled the input
-        if (KBState == 3)
-        {
-            bCancelled = true;
-            break;
-        }
-        // Otherwise if the user has entered a key
-        else if (KBState != 4)
-        {
-            printf("%c[2K\r", 27);
-            printf("%s", input.c_str());
-        }
-
-        // Flush and swap framebuffers
-        gfxFlushBuffers();
-        gfxSwapBuffers();
-
-        //Wait for VBlank
-        gspWaitForVBlank();
-    }
-    printf("\n");
-    return input;
-}
 
 void removeForbiddenChar(std::string* s)
 {
@@ -354,246 +215,169 @@ int levenshtein_distance(const std::string &s1, const std::string &s2)
     return result;
 }
 
-/* Menu Action Functions */
-void action_search()
-{
-    HB_Keyboard sHBKB;
-    bool bKBCancelled = false;
-
-    consoleClear();
-
-    printf("Please enter text to search for:\n");
-    std::string searchstring = getInput(&sHBKB, bKBCancelled);
-    if (bKBCancelled)
-    {
-        return;
-    }
-
-    // User has entered their input, so let's scrap the keyboard
-    clear_screen(GFX_BOTTOM);
-
-    std::vector<display_item> display_output;
-    std::ifstream ifs("/CIAngel/wings.json");
-    Json::Reader reader;
-    Json::Value obj;
-    reader.parse(ifs, obj);
-    const Json::Value& characters = obj; // array of characters
-    for (unsigned int i = 0; i < characters.size(); i++){
-        std::string temp;
-        temp = characters[i]["name"].asString();
-
-        int ld = levenshtein_distance(upper(temp), upper(searchstring));
-	if(temp.find("-System") == std::string::npos &&  (regionFilter == "off" || characters[i]["region"].asString() == regionFilter)) {
-		if (ld < 10)
-		{
-		    display_item item;
-		    item.ld = ld;
-		    item.index = i;
-		    display_output.push_back(item);
-		}
-	}
-    }
-
-    // sort similar names by levenshtein distance
-    std::sort(display_output.begin(), display_output.end(), compareByLD);
-
-    // We technically have 30 rows to work with, minus 2 for header/footer. But stick with 20 entries for now
-    unsigned int display_amount = 20; 
-    if ( display_output.size() < display_amount )
-    {
-        display_amount = display_output.size();
-    }
-
-    if (display_amount == 0)
-    {
-        printf("No matching titles found.\n");
-        wait_key_specific("\nPress A to return.\n", KEY_A);
-        return;
-    }
-
-    // Eh, allocated memory because we need to format the data
-    char* results[display_amount];
-    for (u8 i = 0; i < display_amount; i++)
-    {
-        results[i] = (char*)malloc(51 * sizeof(char));
-        sprintf(results[i], "%-30s (%s) %s",
-                characters[display_output[i].index]["name"].asString().c_str(),
-                characters[display_output[i].index]["region"].asString().c_str(),
-                characters[display_output[i].index]["code"].asString().c_str());
-    }
-
-    char footer[51];
-    sprintf(footer, "Press A to %s. Press B to return.", (bInstallMode ? "Install" : "Download"));
-
-    int result = menu_draw("Select a Title", footer, 1, sizeof(results) / sizeof(char*), (const char**)results);
-
-    // Free our allocated memory
-    for (u8 i = 0; i < display_amount; i++)
-    {
-        free(results[i]);
-    }
-
-    if (result == -1)
-    {
-        return;
-    }
-
-    // Clean up the console since we'll be using it
-    consoleClear();
-
-    // Fetch the title data and start downloading
-    std::string selected_titleid = characters[display_output[result].index]["titleid"].asString();
-    std::string selected_enckey = characters[display_output[result].index]["enckey"].asString();
-    std::string selected_name = characters[display_output[result].index]["name"].asString();
-
-    printf("OK - %s\n", selected_name.c_str());
-    //removes any problem chars, not sure if whitespace is a problem too...?
-    removeForbiddenChar(&selected_name);
-
-    DownloadTitle(selected_titleid, selected_enckey, "/CIAngel/" + selected_name);
-    wait_key_specific("\nPress A to continue.\n", KEY_A);
-}
-
-void action_manual_entry()
-{
-    HB_Keyboard sHBKB;
-    bool bKBCancelled = false;
-
-    consoleClear();
-
-    // Keep looping so the user can retry if they enter a bad id/key
-    while(true)
-    {
-        printf("Please enter a titleID:\n");
-        std::string titleId = getInput(&sHBKB, bKBCancelled);
-        if (bKBCancelled)
-        {
-            break;
-        }
-
-        printf("Please enter the corresponding encTitleKey:\n");
-        std::string key = getInput(&sHBKB, bKBCancelled);
-        if (bKBCancelled)
-        {
-            break;
-        }
-
-        if (titleId.length() == 16 && key.length() == 32)
-        {
-            DownloadTitle(titleId, key, "/CIAngel");
-            wait_key_specific("\nPress A to continue.\n", KEY_A);
-            break;
-        }
-        else
-        {
-            printf("encTitleKeys are 32 characters long,\nand titleIDs are 16 characters long.\n");
-        }
-    }
-}
-
-void action_input_txt()
-{
-    consoleClear();
-
-    std::ifstream input;
-    std::string titleId;
-    std::string key;
-
-    input.open("/CIAngel/input.txt", std::ofstream::in);
-    GetLine(input, titleId);
-    GetLine(input, key);
-    DownloadTitle(titleId, key, "/CIAngel");
-
-    wait_key_specific("\nPress A to continue.\n", KEY_A);
-}
-
-void action_toggle_install()
-{
-    consoleClear();
-
-    bInstallMode = !bInstallMode;
-    if (bInstallMode)
-    {
-        if (!bSvcHaxAvailable)
-        {
-            bInstallMode = false;
-            printf(CONSOLE_RED "Kernel access not available.\nCan't enable Install Mode.\n" CONSOLE_RESET);
-            wait_key_specific("\nPress A to continue.", KEY_A);
-        }
-    }
-}
-
-void action_toggle_region()
-{
-    consoleClear();
-    if(regionFilter == "off") {
-        regionFilter = "ALL";
-    } else if (regionFilter == "ALL") {
-        regionFilter = "EUR";
-    } else if (regionFilter == "EUR") {
-        regionFilter = "USA";
-    } else if (regionFilter == "USA") {
-        regionFilter = "JPN";
-    } else if (regionFilter == "JPN") {
-        regionFilter = "---";
-    } else if (regionFilter == "---") {
-        regionFilter = "off";
-    }
-}
 
 void action_about()
 {
     consoleClear();
-
-    printf(CONSOLE_RED "CIAngel by cearp and Drakia\n" CONSOLE_RESET);
-    printf("Download, create, and install CIAs directly\n");
-    printf("from Nintendo's CDN servers. Grabbing the\n");
-    printf("latest games has never been so easy.\n");
+	
+	printf(CONSOLE_RED "TIKdevil by Kyraminol\n");
+    printf(CONSOLE_BLUE "CIAngel by cearp and Drakia\n" CONSOLE_RESET);
+    printf("Download encTitleKey.bin,\n");
+    printf("generate tickets right on the 3DS\n");
+    printf("and (soon) install them.\n");
     wait_key_specific("\nPress A to continue.\n", KEY_A);
 }
+
+void action_download()
+{
+	consoleClear();
+	mkpath("/TIKdevil/", 0777);
+
+	if (FileExists("/TIKdevil/encTitleKeys.bin")){
+		printf("File exists... we will overwrite it!\n");
+	}
+
+	printf("Downloading encTitleKeys.bin...\n");
+	FILE *oh = fopen("/TIKdevil/encTitleKeys.bin", "wb");
+	Result res = DownloadFile("http://3ds.nfshost.com/downloadenc", oh, true);
+	fclose(oh);
+	if (res != 0)
+	{
+		printf("Could not download file.\n");
+	}
+	else
+	{
+		printf("Downloaded OK!\n");
+	}
+}
+
+
+void action_make_full(){
+	consoleClear();
+	mkpath("/TIKdevil/tickets/", 0777);
+	char titleVersion[2] = {0x00, 0x00};
+	int countGenerated = 0;
+	std::ifstream keyfile("/TIKdevil/encTitleKeys.bin", std::ifstream::binary);
+	keyfile.seekg(0x10, std::ios::beg);
+	std::vector<char> buffer (0x20,0);
+	printf("Generating all tickets from encTitleKeys.\n");
+	printf(CONSOLE_RED "This can take up to 30 minutes.\n" CONSOLE_RESET);
+	while(keyfile.read(buffer.data(), buffer.size()))
+	{
+		std::string titleId = "";
+		std::string encTitleKey = "";
+
+		for (u16 i=0x8; i<0x10; i++)
+		{
+			titleId = titleId + buffer[i];
+		}
+		for (u16 i=0x10; i<0x20; i++)
+		{
+			encTitleKey = encTitleKey + buffer[i];
+		}
+
+		titleId = ToHex(titleId);
+		encTitleKey = ToHex(encTitleKey);
+
+		countGenerated++;
+		CreateTicket(titleId, encTitleKey, titleVersion, "/TIKdevil/tickets/" + titleId + ".tik");
+	}
+	consoleClear();
+	printf("Tickets saved to sd:/TIKdevil/tickets/");
+	printf("Total Title Keys parsed: %d\n\n", countGenerated);
+	wait_key_specific("Press A to return.", KEY_A);	
+}
+
+void action_make_delta(){
+	consoleClear();
+	mkpath("/TIKdevil/tickets/", 0777);
+	char titleVersion[2] = {0x00, 0x00};
+	int countGenerated = 0;
+	int countTotal = 0;
+	std::ifstream keyfile("/TIKdevil/encTitleKeys.bin", std::ifstream::binary);
+	keyfile.seekg(0x10, std::ios::beg);
+	std::vector<char> buffer (0x20,0);
+	printf(CONSOLE_RED "Parsing encTitleKeys.bin (can take some time).\n\n" CONSOLE_RESET);
+	while(keyfile.read(buffer.data(), buffer.size()))
+	{
+		std::string titleId = "";
+		std::string encTitleKey = "";
+
+		for (u16 i=0x8; i<0x10; i++)
+		{
+			titleId = titleId + buffer[i];
+		}
+		for (u16 i=0x10; i<0x20; i++)
+		{
+			encTitleKey = encTitleKey + buffer[i];
+		}
+
+		titleId = ToHex(titleId);
+		encTitleKey = ToHex(encTitleKey);
+
+		if (! FileExists("/TIKdevil/tickets/" + titleId + ".tik")){
+			countGenerated++;
+			consoleClear();
+			printf(CONSOLE_RED "Parsing encTitleKeys.bin (can take some time).\n\n" CONSOLE_RESET);
+			printf("Generating Ticket for title id: %s..", titleId.c_str());
+			CreateTicket(titleId, encTitleKey, titleVersion, "/TIKdevil/tickets/" + titleId + ".tik");
+			printf("done!\n");
+			printf("%d tickets generated so far.\n", countGenerated);
+		}
+		countTotal++;
+	}
+	consoleClear();
+	printf("Tickets saved to sd:/TIKdevil/tickets/");
+	printf("New Tickets generated: %d\n", countGenerated);
+	printf("Total Title Keys parsed: %d\n\n", countTotal);
+	wait_key_specific("Press A to return.", KEY_A);	
+}
+
 
 /* Menu functions */
 void menu_main()
 {
     const char *options[] = {
-        "Search for a title by name",
-        "Enable region filter for search",
-        "Enter a title key/ID pair",
-        "Fetch title key/ID from input.txt",
-        "Toggle 'Install' mode (EXPERIMENTAL!)",
-        "About CIAngel",
+		"Download & Full Generate (recommended 1st time)",
+		"Download & Delta Generate (updating)",
+		"Download encTitleKeys.bin",
+		"Generate Tickets [FULL]",
+		"Generate Tickets [DELTA]",
+        "About TIKdevil",
         "Exit"
     };
-    char footer[31];
+    char footer[37];
 
     while (true)
     {
         // We have to update the footer every draw, incase the user switches install mode
-        sprintf(footer, "%s Mode%s Region:%s", (bInstallMode ? "Install" : "Download"), (bInstallMode ? " (EXPERIMENTAL!)" : ""), regionFilter.c_str());
+        sprintf(footer, "Original CIAngel by cearp and Drakia");
 
-        int result = menu_draw("CIAngel by cearp and Drakia", footer, 0, sizeof(options) / sizeof(char*), options);
+        int result = menu_draw("TIKdevil by Kyraminol", footer, 0, sizeof(options) / sizeof(char*), options);
 
         switch (result)
         {
-            case 0:
-                action_search();
-            break;
-            case 1:
-                action_toggle_region();
+			case 0:
+				action_download();
+				action_make_full();
+			break;
+			case 1:
+                action_download();
+				action_make_delta();
             break;
             case 2:
-                action_manual_entry();
+                action_download();
             break;
             case 3:
-                action_input_txt();
+                action_make_full();
             break;
-            case 4:
-                action_toggle_install();
+			case 4:
+                action_make_delta();
             break;
             case 5:
                 action_about();
             break;
-            case 6:
+			case 6:
                 return;
             break;
         }
@@ -629,7 +413,6 @@ int main(int argc, const char* argv[])
     soc_sharedmem = (u32 *)memalign(0x1000, soc_sharedmem_size);
     socInit(soc_sharedmem, soc_sharedmem_size);
     sslcInit(0);
-    hidInit();
 
     if (bSvcHaxAvailable)
     {
@@ -646,7 +429,6 @@ int main(int argc, const char* argv[])
     }
 
     gfxExit();
-    hidExit();
     httpcExit();
     socExit();
     sslcExit();
