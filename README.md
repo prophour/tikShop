@@ -1,26 +1,20 @@
 # TIKdevil
 
+Fastest batch TIKs (eShop TIcKets) maker and installer on the planet, right on your 3DS!
 
-Now we can build TIKs (eShop TIcKets) on the 3DS!
-"Download & Generate" option is recommended for first time use, it will download lastest encTitleKeys.bin on the 3DS and generate the TIKs out of it.
+# Features
+- Doesn't anymore rely on encTitleKeys.bin nor any files, direct table parse from that title key site;
+- **Complete revamp, 1 click take-them-all in less than 5 minutes**;
+- **Reads already installed tickets and only generates missing ones**;
+- **Direct installs generated tickets!**
+- Removes temp files, leaving only table for local storage.
 
-*Note: it can take half hour or so, the screen can seem idle but it's processing so yeah. I will look forward to improve this*
-
-Next time uses, for like updating, you can use "Download & Delta Generate" for generating only new TIKs.
-
-*Note: it will save ~20 minutes, but it's still slow... looking forward to improve this too."*
-
-
-## Things to do
-
->Install TIKs right from TIKdevil
-
->Check for already installed TIKs
-
->Region-generations (optional)
-
->Improve generation speed
-
+**Soon**
+- Region filtering;
+- Separate menu items for single things;
+- QR to CIA for quick installing and updating TIKdevil;
+- **eShop redirection**;
+- More speeding and stuff :smile_cat: 
 
 # Building
 TIKdevil depends on [libctru](https://github.com/smealum/ctrulib) and a git submodule that will need to be fetched.
