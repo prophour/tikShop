@@ -295,7 +295,6 @@ Result DownloadFile_Internal(const char *url, void *out, bool bProgress,
             	PrintProgress(fileSize, procSize);
             }
         }
-        printf("\n");
         linearFree(buffer);
     }
 _out:
@@ -320,6 +319,7 @@ Result DownloadFileInstall(const char *url, Handle *handle, u32* offset)
 }
 
 //Data Size conversion
+/*
 u16 u8_to_u16(u8 *value, u8 endianness)
 {
 	u16 new_value;
@@ -338,7 +338,7 @@ u32 u8_to_u32(u8 *value, u8 endianness)
 		case(LITTLE_ENDIAN): new_value = (value[0]<<0) | (value[1]<<8) | (value[2]<<16) | (value[3]<<24); break;
 	}
 	return new_value;
-}
+}*/
 
 
 u64 u8_to_u64(u8 *value, u8 endianness)
@@ -432,7 +432,7 @@ int u64_to_u8(u8 *out_value, u64 in_value, u8 endianness)
 	return 0;
 }
 
-//Copied from ctrtool
+/*
 void memdump(FILE* fout, const char* prefix, const u8* data, u32 size)
 {
 	u32 i;
@@ -459,7 +459,7 @@ void memdump(FILE* fout, const char* prefix, const u8* data, u32 size)
 		size -= max;
 		offs += max;
 	}
-}
+}*/
 
 // HID related
 u32 wait_key()

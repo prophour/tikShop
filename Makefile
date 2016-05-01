@@ -27,15 +27,15 @@ BUILD_FILTER := source/svchax/test/test.c
 EXTRA_OUTPUT_FILES :=
 
 LIBRARY_DIRS := $(DEVKITPRO)/libctru
-LIBRARIES := ctru m hbkb
+LIBRARIES := ctru m
 
 BUILD_FLAGS := -DVERSION_STRING="\"`git describe --tags --abbrev=0`\""
-RUN_FLAGS :=
+RUN_FLAGS := 
 
 # 3DS CONFIGURATION #
 
 TITLE := $(NAME)
-DESCRIPTION := Ticket Generator using encTitleKeys.bin
+DESCRIPTION := Ticket Generator
 AUTHOR := Kyraminol
 PRODUCT_CODE := CTR-K-DEVIL
 UNIQUE_ID := 0xD404
