@@ -337,7 +337,7 @@ void action_makeall()
 			instlastPrint = instprogress+1;
 		}
 	}
-	printf("100%%\n  Done!\n");
+	printf("100%%\n  Done!\n\n");
 	
 	printf("Cleaning temp files...");
 	for (unsigned int i =0; i < vTitleID.size(); i++)
@@ -359,10 +359,10 @@ void action_about()
 	
 	printf(CONSOLE_RED "\n\n\n  TIKdevil by Kyraminol\n\n" CONSOLE_RESET);
     printf("    Generate only missing tickets\n");
-    printf("    and directly install them!\n\n");
+    printf("    and directly install them!\n\n\n");
     printf(CONSOLE_BLUE "  Special thanks to:\n");
 	printf("   cearp, Drakia, steveice10.\n" CONSOLE_RESET);
-    wait_key_specific("\nPress A to continue.\n", KEY_A);
+    wait_key_specific("\n\n  Press A to continue.\n", KEY_A);
 }
 
 void menu_main()
