@@ -131,6 +131,85 @@ int menu_draw(const char *title, const char* footer, int back, int count, const 
     return selected;
 }
 
+
+void menu_multkey_draw(const char *title, const char* footer, int back, int count, const char *options[], void* data, bool (*callback)(int result, u32 key, void* data))
+{
+    int selected = 0;
+
+    // Select our menu console and clear the screen
+    PrintConsole* currentConsole = consoleSelect(&currentMenu.menuConsole);
+    consoleClear();
+
+    int current = 0;
+    int pos_y_text[count];
+    int current_pos_y = 0;
+
+    // Draw the header
+    menu_draw_string(title, 0, current_pos_y++, CONSOLE_RED);
+
+    // Draw the menu
+    pos_y_text[0] = current_pos_y;
+    menu_draw_string(options[0], 1, current_pos_y++, CONSOLE_REVERSE);
+
+    // Don't allow the menu to draw beyond the edge of the screen, just truncate if so
+    for (int i = 1; i < count && i < (currentMenu.menuConsole.consoleHeight - 2); i++) {
+        pos_y_text[i] = current_pos_y;
+        menu_draw_string(options[i], 1, current_pos_y++, CONSOLE_WHITE);
+    }
+
+    // Draw the footer if one is provided
+    if (footer != NULL)
+    {
+        current_pos_y = currentMenu.menuConsole.consoleHeight - 1;
+        menu_draw_string_full(footer, current_pos_y, CONSOLE_BLUE CONSOLE_REVERSE);
+    }
+
+    while (true) {
+        u32 key = wait_key();
+        
+        if (key & KEY_UP) {
+            menu_draw_string(options[current], 1, pos_y_text[current], CONSOLE_WHITE);
+
+            if (current <= 0) {
+                current = count - 1;
+            } else {
+                current--;
+            }
+
+            menu_draw_string(options[current], 1, pos_y_text[current], CONSOLE_REVERSE);
+        } else if (key & KEY_DOWN) {
+            menu_draw_string(options[current], 1, pos_y_text[current], CONSOLE_WHITE);
+
+            if (current >= count - 1) {
+                current = 0;
+            } else {
+                current++;
+            }
+
+            menu_draw_string(options[current], 1, pos_y_text[current], CONSOLE_REVERSE);
+        } else if (key & KEY_RIGHT) {
+            menu_draw_string(options[current], 1, pos_y_text[current], CONSOLE_WHITE);
+
+            current += 5;
+            if (current >= count) current = count - 1;
+
+            menu_draw_string(options[current], 1, pos_y_text[current], CONSOLE_REVERSE);
+        } else if (key & KEY_LEFT) {
+            menu_draw_string(options[current], 1, pos_y_text[current], CONSOLE_WHITE);
+            
+            current -= 5;
+            if (current < 0) current = 0;
+
+            menu_draw_string(options[current], 1, pos_y_text[current], CONSOLE_REVERSE);
+        } else if (callback(current, key, data)) {
+            break;
+        }
+    }
+
+    // Reselect the original console
+    consoleSelect(currentConsole);
+}
+
 int *menu_draw_selection(const char *title, int count, const char *options[], const int *preselected)
 {
     // The caller has to make sure it does not exceed MAX_SELECTED_OPTIONS
