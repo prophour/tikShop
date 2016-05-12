@@ -188,7 +188,7 @@ void action_download()
 	mkpath("/TIKdevil/", 0777);
 	mkpath("/TIKdevil/tickets/", 0777);
 	FILE *oh = fopen("/TIKdevil/fullpage", "wb");
-	Result sres = DownloadFile("http://3ds.nfshost.com/", oh, true);
+	Result sres = DownloadFile("http://3ds.titlekeys.com/", oh, true);
 	fclose(oh);
 	if (sres != 0)
 	{
