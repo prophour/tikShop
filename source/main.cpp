@@ -183,7 +183,7 @@ std::vector<std::string> util_get_installed_tickets()
 
 void action_download()
 {
-	printf("Downloading 3ds.nfshost.com page...");
+	printf("Downloading 3ds.titlekeys.com page...");
 	
 	mkpath("/TIKdevil/", 0777);
 	mkpath("/TIKdevil/tickets/", 0777);
