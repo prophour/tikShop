@@ -461,7 +461,7 @@ Result DownloadFile(const char *url, FILE *os, bool bProgress)
 		std::string sPath = sUrl.substr(nHostEnd);
 		std::string sHost = sUrl.substr(8, nHostEnd - 8);
 		// I am so sorry for HTTP/1.0, but I can't be bothered to write chunked data handling right now
-	    std::string sRequest = "GET " + sPath + " HTTP/1.0\r\nUser-Agent: CIAngel\r\nConnection: close\r\nHost: " + sHost + "\r\n\r\n";
+	    std::string sRequest = "GET " + sPath + " HTTP/1.0\r\nUser-Agent: TIKdevil\r\nConnection: close\r\nHost: " + sHost + "\r\n\r\n";
 
 		return DownloadFileSecure_Internal(sHost.c_str(), sRequest.c_str(), os, bProgress, DownloadFile_InternalSave);
 	}
