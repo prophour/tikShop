@@ -21,7 +21,7 @@ LibCTRU v.1.1.0 or higher is required, this version is not installed with devkit
 
 The bt folder contains buildtools for the 3ds, up to date as of 5/29/2016.
 
-The code in my fork has been modified to compile with a standard devkitPro+Visual Studio 2015 Windows environment, excepting changes above. Run make and magic happens.
+The code in my fork has been modified to compile with a standard devkitPro Windows environment, excepting changes above. Run make and magic happens.
 
 
 ## Credits
