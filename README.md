@@ -17,15 +17,15 @@ Fastest batch TIKs (eShop TIcKets) maker and installer on the planet, right on y
 - More speeding and stuff :smile_cat: 
 
 # Building
-TIKdevil depends on [libctru](https://github.com/smealum/ctrulib) and a git submodule that will need to be fetched.
+TIKdevil depends on [libctru
+(https://github.com/smealum/ctrulib) and a git submodule that will need to be fetched.
 
-When initially fetching the project, the easiest way to get the code and submodules for building is the following:
+LibCTRU v.1.1.0 or higher is required, this is not installed with devkitPro by default. You must compile yourself.
 
-`git clone --recursive https://github.com/Kyraminol/TIKdevil.git`
+TinyXML2 is required, place the source in source folder before building.
 
-If you have already checked out the code without the submodules, you can run the following command in the project directory to fetch the submodule data:
+The bt folder contains buildtools for the 3ds.
 
-`git submodule update --init --recursive`
 
 ## Credits
 
