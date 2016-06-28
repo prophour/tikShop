@@ -735,6 +735,26 @@ bool check_JSON(bool forceUpdate = true) {
 
     return true;
 }
+
+std::string GetSystemRegion()
+{
+	u8 region = -1;
+	CFGU_SecureInfoGetRegion(&region);
+	
+	if(region == CFG_REGION_JPN)
+		return "JPN";
+	
+	if(region == CFG_REGION_USA)
+		return "USA";
+	
+	if(region == CFG_REGION_EUR)
+		return "EUR";
+	
+	if(region == CFG_REGION_AUS)
+		return "EUR";
+	
+	return "ALL";
+}
 std::string GetSerialType(std::string sSerial)
 {
     std::string sType = "Unknown";

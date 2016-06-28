@@ -567,6 +567,7 @@ int main(int argc, const char* argv[])
     socInit(soc_sharedmem, soc_sharedmem_size);
     sslcInit(0);
 	amInit();
+    cfguInit();
     AM_InitializeExternalTitleDatabase(false);
 
     init_menu(GFX_TOP);
@@ -575,8 +576,12 @@ int main(int argc, const char* argv[])
     mkpath("/TIKdevil/", 0777);
     mkpath("/TIKdevil/tickets/", 0777);
     
+    // Load the region from system secure info
+    region = GetSystemRegion();
+    
     menu_main();
 	
+    cfguExit();
 	amExit();
     gfxExit();
     httpcExit();
