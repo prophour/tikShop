@@ -389,8 +389,8 @@ void action_about()
 	printf(CONSOLE_RED "\n\n\n  TIKdevil by Kyraminol\n\n" CONSOLE_RESET);
     printf("    Generate only missing tickets\n");
     printf("    and directly install them!\n\n\n");
-    printf(CONSOLE_BLUE "  Special thanks to:\n");
-	printf("   cearp, Drakia, steveice10, Mmcx125.\n" CONSOLE_RESET);
+    printf(CONSOLE_BLUE "  Special thanks to:\n\n" CONSOLE_RESET);
+	printf("    cearp, Drakia, steveice10, Mmcx125,\n    and DanTheMan827.\n" CONSOLE_RESET);
     wait_key_specific("\n\n  Press A to continue.\n", KEY_A);
 }
 
