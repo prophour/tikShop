@@ -27,16 +27,16 @@
 
 #include <3ds.h>
 
-#include "tinyxml2.h"
 #include "utils.h"
 #include "data.h"
 #include "menu.h"
-
+#include "json/json.h"
 
 static const u16 top = 0x140;
 static std::string region = "ALL";
 static bool bExit = false;
-
+int sourceDataType;
+Json::Value sourceData;
 
 std::string upper(std::string s)
 {
@@ -143,6 +143,23 @@ std::string ToHex(const std::string& s)
 }
 
 
+void load_JSON_data() 
+{
+    printf("loading horns.json...\n");
+    std::ifstream ifs("/TIKdevil/horns.json");
+    Json::Reader reader;
+    Json::Value obj;
+    reader.parse(ifs, obj);
+    sourceData = obj; // array of characters
+    
+    if(sourceData[0]["titleID"].isString()) {
+      sourceDataType = JSON_TYPE_ONLINE;
+    } else if (sourceData[0]["titleid"].isString()) {
+      sourceDataType = JSON_TYPE_HORNS;
+    }
+}
+
+
 std::string get_file_contents(const char *filename)
 {
   std::ifstream in(filename, std::ios::in | std::ios::binary);
@@ -181,119 +198,57 @@ std::vector<std::string> util_get_installed_tickets()
 	return vTickets;
 }
 
-void action_download()
-{
-	printf("Downloading 3ds.titlekeys.com page...");
-	
-	mkpath("/TIKdevil/", 0777);
-	mkpath("/TIKdevil/tickets/", 0777);
-	FILE *oh = fopen("/TIKdevil/fullpage", "wb");
-	Result sres = DownloadFile("https://3ds.titlekeys.com/", oh, true);
-	fclose(oh);
-	if (sres != 0)
-	{
-		printf("Could not download file.\n");
-	}
-	
-	printf("done!\n\n");
-}
-
-void action_table_strip()
-{
-	printf("Stripping table...\n");
-	printf("  Phase 1...");
-	std::string divBuffer = get_file_contents("/TIKdevil/fullpage");
-	std::string buf = divBuffer.substr((divBuffer.find("</thead>")  + 8), (divBuffer.find("</table>") - divBuffer.find("</thead>")));
-	int totSize = buf.size();
-	int lastPrint=0;
-	printf("done!\n\n");
-	
-	printf("   Phase 2...\n   ");
-	while(buf.find("<button class=\"clipboard btn btn-info btn-sm\"><span class=\"glyphicon glyphicon-copy\"></span></button>") != std::string::npos)
-	{
-		int curPos = buf.find("<button class=\"clipboard btn btn-info btn-sm\"><span class=\"glyphicon glyphicon-copy\"></span></button>");
-		buf.erase(buf.find("<button class=\"clipboard btn btn-info btn-sm\"><span class=\"glyphicon glyphicon-copy\"></span></button>"), 101);
-		int progress=curPos*100/totSize;
-		if((progress%10==0 and progress>lastPrint)or(progress==0 and lastPrint==0)){
-			printf("%d%% ", progress);
-			lastPrint = progress+1;
-		}
-	}
-	printf("100%%\n   Done!\n\n    Phase 3...\n    ");
-	lastPrint=0;
-	while(buf.find("<button class=\"qr btn btn-info btn-sm\"><span class=\"glyphicon glyphicon-qrcode\"></span></button>") != std::string::npos)
-	{
-		int curPos = buf.find("<button class=\"qr btn btn-info btn-sm\"><span class=\"glyphicon glyphicon-qrcode\"></span></button>");
-		buf.erase(buf.find("<button class=\"qr btn btn-info btn-sm\"><span class=\"glyphicon glyphicon-qrcode\"></span></button>"), 96);
-		int progress=curPos*100/totSize;
-		if((progress%10==0 and progress>lastPrint)or(progress==0 and lastPrint==0)){
-			printf("%d%% ", progress);
-			lastPrint = progress+1;
-		}
-	}
-	printf("100%%\n    Done!\n\nWriting to file...");
-	FILE *fp = fopen ("/TIKdevil/table", "w+");
-	fprintf(fp, "%s", buf.c_str());
-	fclose(fp);
-	printf("done!\n\n");
-}
-
 
 void action_missing_tickets(std::vector<std::string> &vEncTitleKey, std::vector<std::string> &vTitleID, std::vector<std::string> &vTitleRegion, int &n, std::string regionFilter, bool del)
 {
+	// Set up the reading of json
+	if (check_JSON(del == false))
+	{
+		load_JSON_data();
+	} else
+		return;
+	
 	printf("Checking for already installed tiks...\n");
-	tinyxml2::XMLDocument xmlDoc;
-    xmlDoc.LoadFile( "/TIKdevil/table" );
+  
+	n = 0;
 	
 	std::vector<std::string> vNANDTiks = util_get_installed_tickets();
 	
-	tinyxml2::XMLElement * pTR = xmlDoc.FirstChildElement("tr");
 	const char*  ctitleId = nullptr;
 	const char*  cencTitleKey = nullptr;
-	const char*  ctitleType = nullptr;
 	const char*  ctitleName = nullptr;
-	const char*  ctitleRegion = nullptr;
 	
+	std::string titleType;
 	std::string titleId;
 	std::string encTitleKey;
 	std::string titleRegion;
 	std::string curTik;
+	bool isNotSystemTitle;
 	
-	while (pTR != nullptr)
-	{
-		int i=1;
-		tinyxml2::XMLElement * pTD = pTR->FirstChildElement("td");
-		while (pTD != nullptr)
+	for (unsigned int i = 0; i < sourceData.size(); i++) {
+		// Check that the encTitleKey isn't null
+		if (sourceData[i]["encTitleKey"].isNull())
 		{
-			const char* sOut = pTD->GetText();
-			switch (i)
-			{
-				case(1):
-					ctitleId = sOut;
-				break;
-				case(3):
-					cencTitleKey = sOut;
-				break;
-				case(4):
-					ctitleType = sOut;
-				break;
-				case(5):
-					ctitleName = sOut;
-				break;
-				case(6):
-					ctitleRegion = sOut;
-				break;
-			}
-			pTD = pTD->NextSiblingElement("td");
-			i++;
+			continue;
 		}
+		ctitleId = sourceData[i]["titleID"].asCString();
+		cencTitleKey = sourceData[i]["encTitleKey"].asCString();
+		ctitleName = sourceData[i]["name"].asCString();
+		
+		titleRegion = sourceData[i]["region"].asString();
+		titleType = sourceData[i]["titleID"].asString().substr(4,4);
+		
+		isNotSystemTitle = (titleType == ESHOP_GAMEAPP or titleType == ESHOP_DLC or titleType == ESHOP_DSIWARE);
+		
 		if(del == false)
 		{
 			
-			if(strcmp(regionFilter.c_str(), "ALL"))
+			if(regionFilter != "ALL")
 			{
-				if(ctitleId != NULL and cencTitleKey != NULL and ctitleName != NULL and (not(strcmp(ctitleType, "eShop/Application")) or not(strcmp(ctitleType, "DLC"))) and(not(strcmp(ctitleRegion, regionFilter.c_str()))))
+				// a specific region is selected
+				if(ctitleId != NULL and cencTitleKey != NULL and ctitleName != NULL and isNotSystemTitle == true and (titleRegion == regionFilter || titleRegion == "ALL" || titleRegion == ""))
 				{
+					// add it if it isn't a system title and the region matches
 					titleId = ctitleId;
 					bool found = false;
 					for(unsigned int foo =0; foo < vNANDTiks.size(); foo++)
@@ -311,7 +266,6 @@ void action_missing_tickets(std::vector<std::string> &vEncTitleKey, std::vector<
 						
 						encTitleKey = cencTitleKey;
 						encTitleKey.erase(remove_if(encTitleKey.begin(), encTitleKey.end(), isspace), encTitleKey.end());
-						titleRegion = ctitleRegion;
 						
 						vTitleID.push_back(titleId);
 						vEncTitleKey.push_back(encTitleKey);
@@ -319,8 +273,9 @@ void action_missing_tickets(std::vector<std::string> &vEncTitleKey, std::vector<
 					}
 				}
 			} else {
-				if(ctitleId != NULL and cencTitleKey != NULL and ctitleName != NULL and (not(strcmp(ctitleType, "eShop/Application")) or not(strcmp(ctitleType, "DLC"))))
+				if(ctitleId != NULL and cencTitleKey != NULL and ctitleName != NULL and isNotSystemTitle == true)
 				{
+					// add anything that isn't a system title ticket
 					titleId = ctitleId;
 					bool found = false;
 					for(unsigned int foo =0; foo < vNANDTiks.size(); foo++)
@@ -344,24 +299,26 @@ void action_missing_tickets(std::vector<std::string> &vEncTitleKey, std::vector<
 			}
 		} else {
 			u64 curr;
-			if(strcmp(regionFilter.c_str(), "ALL"))
+			if(regionFilter != "ALL")
 			{
-				if(ctitleId != NULL and cencTitleKey != NULL and ctitleName != NULL and (not(strcmp(ctitleType, "eShop/Application")) or not(strcmp(ctitleType, "DLC"))) and(strcmp(ctitleRegion, regionFilter.c_str())))
+				// If region is not ALL
+				if(ctitleId != NULL and cencTitleKey != NULL and ctitleName != NULL and isNotSystemTitle == true and (titleRegion != regionFilter && titleRegion != "ALL" && titleRegion != ""))
 				{
+					// If region matches selection and it not a system title
 					n++;
 					curr = strtoull(ctitleId, NULL, 16) ;
 					AM_DeleteTicket(curr);
 				}
 			} else {
-				if(ctitleId != NULL and cencTitleKey != NULL and ctitleName != NULL and (not(strcmp(ctitleType, "eShop/Application")) or not(strcmp(ctitleType, "DLC"))))
+				if(ctitleId != NULL and cencTitleKey != NULL and ctitleName != NULL and isNotSystemTitle == true)
 				{
+					// This isn't a system title ticket, remove it
 					n++;
 					curr = strtoull(ctitleId, NULL, 16) ;
 					AM_DeleteTicket(curr);
 				}
 			}
 		}
-		pTR = pTR->NextSiblingElement("tr");
 	}
 	if(del==false)printf("Missing tickets: %d\n\n", n);
 	else if(del==true)printf("Deleted tickets: %d\n\n", n);
@@ -447,8 +404,8 @@ void action_toggle_region()
 
 int action_getconfirm(){
 	int ret = 0;
-	char msg[32];
 	/* Commenting out due to missing code handling other regions.
+	char msg[32];
 	sprintf(msg, "Region set to %s are you sure?", region.c_str());
 	if(region=="ALL"){
 	    const char *confirm[] = {
@@ -523,8 +480,6 @@ void select_oneclick()
 	consoleClear();
 	int w = action_getconfirm();
 	if(w<0)return;
-	action_download();
-	action_table_strip();
 	std::vector<std::string> Keys;
 	std::vector<std::string> IDs;
 	std::vector<std::string> Regions;
@@ -615,6 +570,11 @@ int main(int argc, const char* argv[])
     AM_InitializeExternalTitleDatabase(false);
 
     init_menu(GFX_TOP);
+    
+    // Make sure all TIKdevil directories exists on the SD card
+    mkpath("/TIKdevil/", 0777);
+    mkpath("/TIKdevil/tickets/", 0777);
+    
     menu_main();
 	
 	amExit();
