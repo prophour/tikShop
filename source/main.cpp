@@ -100,20 +100,17 @@ char* parse_string(const std::string & s)
     return buffer;
 }
 
-void CreateTicket(std::string titleId, std::string encTitleKey, char* titleVersion, std::string outputFullPath)
+std::string GetTicket(std::string titleId, std::string encTitleKey, char* titleVersion)
 {
-    std::ofstream ofs;
-    ofs.open(outputFullPath, std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
+    std::ostringstream ofs;
     ofs.write(tikTemp, 0xA50);
-    ofs.close();
-    ofs.open(outputFullPath, std::ofstream::out | std::ofstream::in | std::ofstream::binary);
     ofs.seekp(top+0xA6, std::ios::beg);
     ofs.write(titleVersion, 0x2);
     ofs.seekp(top+0x9C, std::ios::beg);
     ofs.write(parse_string(titleId), 0x8);
     ofs.seekp(top+0x7F, std::ios::beg);
     ofs.write(parse_string(encTitleKey), 0x10);
-    ofs.close();
+    return ofs.str();
 }
 
 
@@ -331,21 +328,6 @@ void action_missing_tickets(std::vector<std::string> &vEncTitleKey, std::vector<
 			}
 		}
 	}
-}
-
-void action_generate(std::vector<std::string> vEncTitleKey,std::vector<std::string> vTitleID, int index)
-{
-	printf("Generating missing tickets...\n  ");
-	char titleVersion[2] = {0x00, 0x00};
-	int genlastPrint = 0;
-	for (unsigned int i =0; i < vTitleID.size(); i++)
-	{
-		CreateTicket(vTitleID.at(i), vEncTitleKey.at(i), titleVersion, "/TIKdevil/tickets/" + vTitleID.at(i) + ".tik");
-		int genprogress = i*100/index;
-		if((genprogress%10==0 and genprogress>genlastPrint)or(genprogress==0 and genlastPrint==0)){
-			printf("%d%% ", genprogress);
-			genlastPrint = genprogress+1;
-		}
 	
 	if(del==false){
 		printf("Missing tickets: %d\n\n", n);
@@ -355,24 +337,21 @@ void action_generate(std::vector<std::string> vEncTitleKey,std::vector<std::stri
 	}
 }
 
-
-
-void action_install(std::vector<std::string> vTitleID, int index)
+void action_install(std::vector<std::string> vEncTitleKey,std::vector<std::string> vTitleID, int index)
 {
-	printf("Installing Tickets...\n  ");
-	
+	printf("Installing missing tickets...\n\n");
+	char titleVersion[2] = {0x00, 0x00};
 	Handle hTik;
 	u32 writtenbyte;
 	int instlastPrint = 0;
 	for (unsigned int i =0; i < vTitleID.size(); i++)
 	{
-		std::string cID = "/TIKdevil/tickets/";
-		cID.append(vTitleID.at(i));
-		cID.append(".tik");
+		
 		AM_InstallTicketBegin(&hTik);
-		std::string curr = get_file_contents(cID.c_str());
+		std::string curr = GetTicket(vTitleID.at(i), vEncTitleKey.at(i), titleVersion);
 		FSFILE_Write(hTik, &writtenbyte, 0, curr.c_str(), 0x150000, 0);
 		AM_InstallTicketFinish(hTik);
+		
 		int instprogress = i*100/index;
 		if((instprogress%10==0 and instprogress>instlastPrint)or(instprogress==0 and instlastPrint==0)){
 			printf("%d%% ", instprogress);
@@ -382,19 +361,6 @@ void action_install(std::vector<std::string> vTitleID, int index)
 	printf("100%%\n  Done!\n\n");
 }
 
-void action_clean(std::vector<std::string> vTitleID)
-{
-	printf("Cleaning temp files...");
-	for (unsigned int i =0; i < vTitleID.size(); i++)
-	{
-		std::string rem = "/TIKdevil/tickets/";
-		rem.append(vTitleID.at(i));
-		rem.append(".tik");
-		remove(rem.c_str());
-	}
-	
-	printf("done!\n");
-}
 
 void action_about()
 {
@@ -512,9 +478,7 @@ void select_oneclick()
 	std::vector<std::string> Regions;
 	int n;
 	action_missing_tickets(Keys, IDs, Regions, n, region, false);
-	action_generate(Keys, IDs, n);
-	action_install(IDs, n);
-	action_clean(IDs);
+	action_install(Keys, IDs, n);
 	wait_key_specific("\n  Press A to continue.\n", KEY_A);
 }
 
@@ -599,9 +563,8 @@ int main(int argc, const char* argv[])
 
     init_menu(GFX_TOP);
     
-    // Make sure all TIKdevil directories exists on the SD card
+    // Make sure the TIKdevil directory exists on the SD card
     mkpath("/TIKdevil/", 0777);
-    mkpath("/TIKdevil/tickets/", 0777);
     
     // Load the region from system secure info
     region = GetSystemRegion();
