@@ -228,7 +228,8 @@ void action_missing_tickets(std::vector<std::string> &vEncTitleKey, std::vector<
 	std::string titleRegion;
 	std::string curTik;
 	bool isNotSystemTitle;
-	
+	int dellastPrint = 0;
+	int index = sourceData.size() - 1;
 	for (unsigned int i = 0; i < sourceData.size(); i++) {
 		// Check that the encTitleKey isn't null
 		if (sourceData[i]["encTitleKey"].isNull())
@@ -323,6 +324,11 @@ void action_missing_tickets(std::vector<std::string> &vEncTitleKey, std::vector<
 					AM_DeleteTicket(curr);
 				}
 			}
+			int delprogress = i*100/index;
+			if((delprogress%10==0 and delprogress>dellastPrint)or(delprogress==0 and dellastPrint==0)){
+				printf("%d%% ", delprogress);
+				dellastPrint = delprogress+1;
+			}
 		}
 	}
 }
@@ -344,9 +350,9 @@ void action_generate(std::vector<std::string> vEncTitleKey,std::vector<std::stri
 	if(del==false){
 		printf("Missing tickets: %d\n\n", n);
 	} else if(del==true){
+		printf("100%%\n\n");
 		printf("Deleted tickets: %d\n\n", n);
 	}
-	printf("100%%\n  Done!\n\n");
 }
 
 
