@@ -208,7 +208,11 @@ void action_missing_tickets(std::vector<std::string> &vEncTitleKey, std::vector<
 	} else
 		return;
 	
-	printf("Checking for already installed tiks...\n");
+	if(del == false){
+		printf("Checking for already installed tiks...\n\n");
+	} else {
+		printf("Checking for out of region tiks...\n\n");
+	}
   
 	n = 0;
 	
@@ -298,11 +302,12 @@ void action_missing_tickets(std::vector<std::string> &vEncTitleKey, std::vector<
 				}
 			}
 		} else {
+			
 			u64 curr;
 			if(regionFilter != "ALL")
 			{
 				// If region is not ALL
-				if(ctitleId != NULL and cencTitleKey != NULL and ctitleName != NULL and isNotSystemTitle == true and (titleRegion != regionFilter && titleRegion != "ALL" && titleRegion != ""))
+				if(ctitleId != NULL and cencTitleKey != NULL and ctitleName != NULL and isNotSystemTitle == true and ((regionFilter != "REGION FREE" && titleRegion != regionFilter && titleRegion != "ALL" && titleRegion != "") || (regionFilter == "REGION FREE" && (titleRegion != "ALL" && titleRegion != ""))))
 				{
 					// If region matches selection and it not a system title
 					n++;
@@ -320,8 +325,6 @@ void action_missing_tickets(std::vector<std::string> &vEncTitleKey, std::vector<
 			}
 		}
 	}
-	if(del==false)printf("Missing tickets: %d\n\n", n);
-	else if(del==true)printf("Deleted tickets: %d\n\n", n);
 }
 
 void action_generate(std::vector<std::string> vEncTitleKey,std::vector<std::string> vTitleID, int index)
@@ -337,6 +340,11 @@ void action_generate(std::vector<std::string> vEncTitleKey,std::vector<std::stri
 			printf("%d%% ", genprogress);
 			genlastPrint = genprogress+1;
 		}
+	
+	if(del==false){
+		printf("Missing tickets: %d\n\n", n);
+	} else if(del==true){
+		printf("Deleted tickets: %d\n\n", n);
 	}
 	printf("100%%\n  Done!\n\n");
 }
@@ -396,30 +404,37 @@ void action_about()
 
 void action_toggle_region()
 {
-	if(region == "ALL")region = "EUR"; 
+	if(region == "REGION FREE")region = "ALL"; 
+	else if(region == "ALL") region = "EUR";
 	else if(region == "EUR") region = "USA";
 	else if(region == "USA") region = "JPN";
-	else if(region == "JPN") region = "ALL";
+	else if(region == "JPN") region = "CHN";
+	else if(region == "CHN") region = "KOR";
+	else if(region == "KOR") region = "TWN";
+	else if(region == "TWN") region = "REGION FREE";
 }
 
-int action_getconfirm(){
+int action_getconfirm(bool removing){
 	int ret = 0;
-	/* Commenting out due to missing code handling other regions.
-	char msg[32];
-	sprintf(msg, "Region set to %s are you sure?", region.c_str());
-	if(region=="ALL"){
-	    const char *confirm[] = {
-			"No! Return me to main menu.",
-			"Yes, but select EUR.",
-			"Yes, but select USA.",
-			"Yes, but select JPN.",
+
+	char msg[72];
+	
+	if(region == "ALL"){
+		sprintf(msg, "Region set to ALL are you sure?");
+			const char *confirm[] = {
+			"No, take me to main menu.",
+			"No, I only want EUR.",
+			"No, I only want USA.",
+			"No, I only want JPN.",
+			"No, I only want CHN.",
+			"No, I only want KOR.",
+			"No, I only want TWN.",
+			"No, I only want region free.",
 			"ARR ARR SELECT THEM ALL."
 		};
-		char foo[2];
 		while(ret==0)
 		{
-			sprintf(foo, " ");
-			int result = menu_draw(msg, foo, 0, sizeof(confirm) / sizeof(char*), confirm);
+			int result = menu_draw(msg, " ", 0, sizeof(confirm) / sizeof(char*), confirm);
 			switch (result)
 			{
 				case 0:
@@ -431,45 +446,51 @@ int action_getconfirm(){
 				case 3:
 					ret=1; region = "JPN"; break;
 				case 4:
+					ret=1; region = "CHN"; break;
+				case 5:
+					ret=1; region = "KOR"; break;
+				case 6:
+					ret=1; region = "TWN"; break;
+				case 7:
+					ret=1; region = "REGION FREE"; break;
+				case 8:
 					ret=1; break;
 			}
 			clear_screen(GFX_BOTTOM);
 		}
 		consoleClear();
 	} else {
-		const char *confirm[] = {
-			"No! Return me to main menu.",
-			"Yes, continue with my selection.",
-			"Yes, but select EUR.",
-			"Yes, but select USA.",
-			"Yes, but select JPN.",
-			"ARR ARR SELECT THEM ALL."
-		};
-		char foo[2];
-		while(ret==0)
-		{
-			
-			sprintf(foo, " ");
-			int result = menu_draw(msg, foo, 0, sizeof(confirm) / sizeof(char*), confirm);
-			switch (result)
-			{
-				case 0:
-					ret=-1; break;
-				case 1:
-					ret=1; break;
-				case 2:
-					ret=1; region = "EUR"; break;
-				case 3:
-					ret=1; region = "USA"; break;
-				case 4:
-					ret=1; region = "JPN"; break;
-				case 5:
-					ret=1; region = "ALL"; break;
-			}
-			clear_screen(GFX_BOTTOM);
+		printf("Region set to %s, press A to continue,\nor any other to cancel.", region.c_str());
+		u32 keys = wait_key();
+		if (keys & KEY_A) {
+			ret = 1;
+		} else {
+			ret = -1;
 		}
 		consoleClear();
-	} */
+	}
+
+	if(removing == true && region == "ALL"){
+		printf(CONSOLE_RED "\nDanger, Will Robinson!\nThis will remove ALL tickets\nincluding ones for your region!" CONSOLE_RESET "\n\nPress A to continue,\nor any other to cancel.\n\n");
+      u32 keys = wait_key();
+      
+      if (keys & KEY_A) {
+        ret = 1;
+      } else {
+				ret = -1;
+			}
+	}
+	if(removing == true && region == "REGION FREE"){
+		printf(CONSOLE_RED "\nDanger, Will Robinson!\nThis will remove everything except region free\ntickets, this may include ones you have installed!" CONSOLE_RESET "\n\nPress A to continue,\nor any other to cancel.\n\n");
+      u32 keys = wait_key();
+      
+      if (keys & KEY_A) {
+        ret = 1;
+      } else {
+				ret = -1;
+			}
+	}
+	
 	return ret;
 }
 
@@ -478,7 +499,7 @@ int action_getconfirm(){
 void select_oneclick()
 {
 	consoleClear();
-	int w = action_getconfirm();
+	int w = action_getconfirm(false);
 	if(w<0)return;
 	std::vector<std::string> Keys;
 	std::vector<std::string> IDs;
@@ -495,7 +516,7 @@ void select_oneclick()
 
 void select_removeout(){
 	consoleClear();
-	int w = action_getconfirm();
+	int w = action_getconfirm(true);
 	if(w<0)return;
 	printf("Deleting selected tickets...\n");
 	std::vector<std::string> Keys;

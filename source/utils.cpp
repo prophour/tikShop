@@ -740,7 +740,7 @@ std::string GetSystemRegion()
 {
 	u8 region = -1;
 	CFGU_SecureInfoGetRegion(&region);
-	
+
 	if(region == CFG_REGION_JPN)
 		return "JPN";
 	
@@ -753,7 +753,16 @@ std::string GetSystemRegion()
 	if(region == CFG_REGION_AUS)
 		return "EUR";
 	
-	return "ALL";
+	if(region == CFG_REGION_CHN)
+		return "CHN";
+	
+	if(region == CFG_REGION_KOR)
+		return "KOR";
+	
+	if(region == CFG_REGION_TWN)
+		return "TWN";
+	
+	return "REGION FREE ONLY";
 }
 std::string GetSerialType(std::string sSerial)
 {
