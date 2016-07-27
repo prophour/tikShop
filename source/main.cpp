@@ -195,6 +195,19 @@ std::vector<std::string> util_get_installed_tickets()
 	return vTickets;
 }
 
+bool is_ticket_installed(std::vector<std::string> &vNANDTiks, std::string &titleId)
+{
+    for(unsigned int foo =0; foo < vNANDTiks.size(); foo++)
+    {
+        std::string curTik = vNANDTiks.at(foo);
+        std::transform(curTik.begin(), curTik.end(), curTik.begin(), ::tolower);
+        if(titleId == curTik) 
+        {
+            return true;				
+        }
+    }
+    return false;
+}
 
 void action_missing_tickets(std::vector<std::string> &vEncTitleKey, std::vector<std::string> &vTitleID, std::vector<std::string> &vTitleRegion, int &n, std::string regionFilter, bool del)
 {
@@ -223,7 +236,6 @@ void action_missing_tickets(std::vector<std::string> &vEncTitleKey, std::vector<
 	std::string titleId;
 	std::string encTitleKey;
 	std::string titleRegion;
-	std::string curTik;
 	bool isNotSystemTitle;
 	int dellastPrint = 0;
 	int index = sourceData.size() - 1;
@@ -237,6 +249,7 @@ void action_missing_tickets(std::vector<std::string> &vEncTitleKey, std::vector<
 		cencTitleKey = sourceData[i]["encTitleKey"].asCString();
 		ctitleName = sourceData[i]["name"].asCString();
 		
+        titleId = ctitleId;
 		titleRegion = sourceData[i]["region"].asString();
 		titleType = sourceData[i]["titleID"].asString().substr(4,4);
 		
@@ -251,18 +264,9 @@ void action_missing_tickets(std::vector<std::string> &vEncTitleKey, std::vector<
 				if(ctitleId != NULL and cencTitleKey != NULL and ctitleName != NULL and isNotSystemTitle == true and (titleRegion == regionFilter || titleRegion == "ALL" || titleRegion == ""))
 				{
 					// add it if it isn't a system title and the region matches
-					titleId = ctitleId;
-					bool found = false;
-					for(unsigned int foo =0; foo < vNANDTiks.size(); foo++)
-					{
-						curTik = vNANDTiks.at(foo);
-						std::transform(curTik.begin(), curTik.end(), curTik.begin(), ::tolower);
-						if(titleId == curTik) 
-						{
-							found=true;				
-						}
-					}
-					if(found==false)
+					
+					
+					if(is_ticket_installed(vNANDTiks, titleId)==false)
 					{
 						n++;
 						
@@ -278,18 +282,7 @@ void action_missing_tickets(std::vector<std::string> &vEncTitleKey, std::vector<
 				if(ctitleId != NULL and cencTitleKey != NULL and ctitleName != NULL and isNotSystemTitle == true)
 				{
 					// add anything that isn't a system title ticket
-					titleId = ctitleId;
-					bool found = false;
-					for(unsigned int foo =0; foo < vNANDTiks.size(); foo++)
-					{
-						curTik = vNANDTiks.at(foo);
-						std::transform(curTik.begin(), curTik.end(), curTik.begin(), ::tolower);
-						if(titleId == curTik) 
-						{
-							found=true;				
-						}
-					}
-					if(found==false)
+					if(is_ticket_installed(vNANDTiks, titleId)==false)
 					{
 						encTitleKey = cencTitleKey;
 						encTitleKey.erase(remove_if(encTitleKey.begin(), encTitleKey.end(), isspace), encTitleKey.end());
