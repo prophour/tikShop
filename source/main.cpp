@@ -371,6 +371,7 @@ void action_about()
     printf("    and directly install them!\n\n\n");
     printf(CONSOLE_BLUE "  Special thanks to:\n\n" CONSOLE_RESET);
 	printf("    cearp, Drakia, steveice10, Mmcx125,\n    and DanTheMan827.\n" CONSOLE_RESET);
+    printf("\n\n  Commit: " REVISION_STRING "\n");
     wait_key_specific("\n\n  Press A to continue.\n", KEY_A);
 }
 
