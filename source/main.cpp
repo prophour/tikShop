@@ -301,17 +301,21 @@ void action_missing_tickets(std::vector<std::string> &vEncTitleKey, std::vector<
 				if(ctitleId != NULL and cencTitleKey != NULL and ctitleName != NULL and isNotSystemTitle == true and ((regionFilter != "REGION FREE" && titleRegion != regionFilter && titleRegion != "ALL" && titleRegion != "") || (regionFilter == "REGION FREE" && (titleRegion != "ALL" && titleRegion != ""))))
 				{
 					// If region matches selection and it not a system title
-					n++;
-					curr = strtoull(ctitleId, NULL, 16) ;
-					AM_DeleteTicket(curr);
+                    if(is_ticket_installed(vNANDTiks, titleId)==true){
+                        n++;
+                        curr = strtoull(ctitleId, NULL, 16) ;
+                        AM_DeleteTicket(curr);
+                    }
 				}
 			} else {
 				if(ctitleId != NULL and cencTitleKey != NULL and ctitleName != NULL and isNotSystemTitle == true)
 				{
 					// This isn't a system title ticket, remove it
-					n++;
-					curr = strtoull(ctitleId, NULL, 16) ;
-					AM_DeleteTicket(curr);
+					if(is_ticket_installed(vNANDTiks, titleId)==true){
+                        n++;
+                        curr = strtoull(ctitleId, NULL, 16) ;
+                        AM_DeleteTicket(curr);
+                    }
 				}
 			}
 			int delprogress = i*100/index;
