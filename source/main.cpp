@@ -435,7 +435,7 @@ int action_getconfirm(bool removing){
 	} else {
 		printf("Region set to %s, press A to continue,\nor any other to cancel.", region.c_str());
 		u32 keys = wait_key();
-		if (keys & KEY_A) {
+		if (keys == KEY_A) {
 			ret = 1;
 		} else {
 			ret = -1;
@@ -447,7 +447,7 @@ int action_getconfirm(bool removing){
 		printf(CONSOLE_RED "\nDanger, Will Robinson!\nThis will remove ALL tickets\nincluding ones for your region!" CONSOLE_RESET "\n\nPress A to continue,\nor any other to cancel.\n\n");
       u32 keys = wait_key();
       
-      if (keys & KEY_A) {
+      if (keys == KEY_A) {
         ret = 1;
       } else {
 				ret = -1;
