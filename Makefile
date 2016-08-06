@@ -15,7 +15,7 @@ endif
 
 # COMMON CONFIGURATION #
 
-NAME := TIKdevil
+NAME := tikShop
 
 BUILD_DIR := build
 OUTPUT_DIR := output
@@ -35,10 +35,10 @@ RUN_FLAGS :=
 # 3DS CONFIGURATION #
 
 TITLE := $(NAME)
-DESCRIPTION := Ticket Generator
-AUTHOR := Kyraminol
-PRODUCT_CODE := CTR-K-DEVIL
-UNIQUE_ID := 0xD404
+DESCRIPTION := Generate missing tickets and launch the eShop
+AUTHOR := DanTheMan827
+PRODUCT_CODE := CTR-K-TIKSHOP
+UNIQUE_ID := 0xE82A
 
 SYSTEM_MODE := 64MB
 SYSTEM_MODE_EXT := Legacy
@@ -52,4 +52,4 @@ ICON := icon.png
 
 # INTERNAL #
 
-include bt/make_base
+include buildtools/make_base

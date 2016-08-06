@@ -1,6 +1,6 @@
 #include "launcheshop.h"
 
-void launch_eshop(){
+bool launch_eshop(){
     u8 region = -1;
     CFGU_SecureInfoGetRegion(&region);
     
@@ -33,5 +33,7 @@ void launch_eshop(){
         
         // Tell APT to trigger the app launch and set the status of this app to exit
         APT_DoApplicationJump(param, sizeof(param), hmac);
+        return true;
     }
+    return false;
 }

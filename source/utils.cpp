@@ -693,7 +693,7 @@ void clear_screen(gfxScreen_t screen)
 }
 
 bool download_JSON() {
-  printf("\nAttempting to download JSON...\n");
+  printf("\n Attempting to download JSON...\n");
   
   remove("/TIKdevil/horns.json.tmp");
   FILE *oh = fopen("/TIKdevil/horns.json.tmp", "wb");
@@ -709,7 +709,7 @@ bool download_JSON() {
     }
   }
   
-  printf("Failed to download JSON");
+  printf(" Failed to download JSON");
   return false;
 }
 
@@ -717,10 +717,8 @@ bool check_JSON(bool forceUpdate = true) {
     struct stat filestats;
     int ret = stat("/TIKdevil/horns.json", &filestats);
 
-    if (ret == 0) {
-      if (forceUpdate == true) {
+    if (ret == 0 || forceUpdate == true) {
         return download_JSON();
-      }
     } else {
       printf("No horns.json\n");
 

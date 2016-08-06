@@ -6,4 +6,4 @@
 #define KOR_ESHOP_TITLEID 0x0004001000027900
 #define TWN_ESHOP_TITLEID 0x0004001000028900
 
-void launch_eshop();
+bool launch_eshop();
