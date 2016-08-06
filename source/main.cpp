@@ -28,6 +28,7 @@
 #include <3ds.h>
 
 #include "utils.h"
+#include "launcheshop.h"
 #include "data.h"
 #include "menu.h"
 #include "json/json.h"
@@ -355,7 +356,7 @@ void action_install(std::vector<std::string> vEncTitleKey,std::vector<std::strin
 			instlastPrint = instprogress+1;
 		}
 	}
-	printf("100%%\n  Done!\n\n");
+	printf("100%%\n\nDone!\n\n");
 }
 
 
@@ -477,7 +478,15 @@ void select_oneclick()
 	int n;
 	action_missing_tickets(Keys, IDs, Regions, n, region, false);
 	action_install(Keys, IDs, n);
-	wait_key_specific("\n  Press A to continue.\n", KEY_A);
+	printf("\nPress A to open eShop.");
+	printf("\nPress B to return to the main menu.");
+	while(true){
+		u32 keys = wait_key();
+		switch(keys){
+			case KEY_A: launch_eshop(); break;
+			case KEY_B: return; break;
+		}
+	}
 }
 
 
@@ -504,16 +513,14 @@ bool menu_main_keypress(int selected, u32 key, void*)
         switch (selected)
         {
             case 0:
-                select_oneclick();
-            break;
+                select_oneclick(); break;
 			case 1:
-				select_removeout();
-			break;
-			
-			
+				select_removeout(); break;
             case 2:
+				launch_eshop(); break;
+			case 3:
                 action_about(); break;
-            case 3:
+            case 4:
                 bExit = true; break;
         }
         return true;
@@ -532,6 +539,7 @@ void menu_main()
     const char *options[] = {
 		"Update your Tickets!",
 		"Remove out-of-region tickets",
+		"Launch eShop",
         "About TIKdevil",
         "Exit",
     };
