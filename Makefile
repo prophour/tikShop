@@ -29,7 +29,7 @@ EXTRA_OUTPUT_FILES :=
 LIBRARY_DIRS := $(DEVKITPRO)/libctru
 LIBRARIES := ctru m
 
-BUILD_FLAGS := -DVERSION_STRING="\"`git describe --tags --abbrev=0`\"" -DREVISION_STRING="\"`git rev-parse --short HEAD`\""
+BUILD_FLAGS := -DVERSION_STRING="\"`git describe --tags --abbrev=0`\"" -DREVISION_STRING="\"`git rev-parse --short HEAD``git diff-index --quiet HEAD -- || echo ' (dirty)'`\""
 RUN_FLAGS :=
 
 VERSION_PARTS := $(subst ., ,$(shell echo "`git describe --tags --abbrev=0`.0.0" | cut -d "v" -f 2))
