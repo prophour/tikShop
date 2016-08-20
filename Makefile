@@ -30,7 +30,17 @@ LIBRARY_DIRS := $(DEVKITPRO)/libctru
 LIBRARIES := ctru m
 
 BUILD_FLAGS := -DVERSION_STRING="\"`git describe --tags --abbrev=0`\"" -DREVISION_STRING="\"`git rev-parse --short HEAD`\""
-RUN_FLAGS := 
+RUN_FLAGS :=
+
+VERSION_PARTS := $(subst ., ,$(shell echo "`git describe --tags --abbrev=0`.0.0" | cut -d "v" -f 2))
+
+VERSION_MAJOR := $(word 1, $(VERSION_PARTS))
+VERSION_MINOR := $(word 2, $(VERSION_PARTS))
+VERSION_MICRO := $(word 3, $(VERSION_PARTS))
+
+$(info Major Version: $(VERSION_MAJOR))
+$(info Minor Version: $(VERSION_MINOR))
+$(info Micro Version: $(VERSION_MICRO))
 
 # 3DS CONFIGURATION #
 
