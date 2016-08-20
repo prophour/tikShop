@@ -21,12 +21,6 @@ along with make_cdn_cia.  If not, see <http://www.gnu.org/licenses/>.
 #define NUS_URL "http://ccs.cdn.c.shop.nintendowifi.net/ccs/download/"
 #define JSON_URL "https://3ds.titlekeys.com/json_enc"
 
-// Title ID type definitions
-#define ESHOP_GAMEAPP "0000"
-#define ESHOP_DLC "008c"
-#define ESHOP_UPDATE "000e"
-#define ESHOP_DSIWARE "8004"
-
 #define JSON_TYPE_HORNS 1
 #define JSON_TYPE_ONLINE 2
 
