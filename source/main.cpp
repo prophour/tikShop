@@ -28,7 +28,7 @@
 #include <3ds.h>
 
 #include "utils.h"
-#include "eshop.h"
+#include "eshop/eshop.h"
 #include "data.h"
 #include "json/json.h"
 
@@ -268,11 +268,7 @@ void select_oneclick() {
     if (action_missing_tickets(Keys, IDs, n, region) == true) {
         action_install(Keys, IDs, n);
 
-        if (launch_eshop()) {
-            while(true) {
-                // The eShop will launch, keep tikShop open until the system takes over
-            }
-        }
+        launch_eshop();
     }
 
     printf("Press any key to exit.");
