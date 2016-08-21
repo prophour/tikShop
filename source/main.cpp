@@ -29,6 +29,7 @@
 
 #include "utils.h"
 #include "eshop/eshop.h"
+#include "ConsoleProgressPrinter/ConsoleProgressPrinter.h"
 #include "data.h"
 #include "json/json.h"
 
@@ -211,33 +212,25 @@ bool action_missing_tickets(std::vector<std::string> &vEncTitleKey, std::vector<
 }
 
 void action_install(std::vector<std::string> vEncTitleKey,std::vector<std::string> vTitleID, int index) {
-	printf(" Installing missing tickets...\n\n");
-	char titleVersion[2] = {0x00, 0x00};
-	Handle hTik;
-	u32 writtenbyte;
-	int instlastPrint = 0;
-	for (unsigned int i =0; i < vTitleID.size(); i++) {
+    if(vTitleID.size() > 0){
+        printf(" Installing missing tickets...\n\n");
+    	char titleVersion[2] = {0x00, 0x00};
+    	Handle hTik;
+    	u32 writtenbyte;
+    	ConsoleProgressPrinter progress(vTitleID.size()-1);
+        printf(" ");
+    	for (unsigned int i =0; i < vTitleID.size(); i++) {
 
-		AM_InstallTicketBegin(&hTik);
-		std::string curr = GetTicket(vTitleID.at(i), vEncTitleKey.at(i), titleVersion);
-		FSFILE_Write(hTik, &writtenbyte, 0, curr.c_str(), 0x150000, 0);
-		AM_InstallTicketFinish(hTik);
+    		AM_InstallTicketBegin(&hTik);
+    		std::string curr = GetTicket(vTitleID.at(i), vEncTitleKey.at(i), titleVersion);
+    		FSFILE_Write(hTik, &writtenbyte, 0, curr.c_str(), 0x150000, 0);
+    		AM_InstallTicketFinish(hTik);
 
-		int instprogress = i * 100 / index;
-		if (
-            (
-                (instprogress % 10) == 0 &&
-                instprogress > instlastPrint
-            ) || (
-                instprogress == 0 &&
-                instlastPrint == 0
-            )
-        ) {
-			printf(" %d%%", instprogress);
-			instlastPrint = instprogress+1;
-		}
-	}
-	printf(" 100%%\n\n Done!\n\n");
+    		progress.updateProgress(i);
+    	}
+        printf("\n\n");
+    }
+	printf(" Done!\n\n");
 }
 
 
